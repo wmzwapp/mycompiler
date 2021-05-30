@@ -4,7 +4,7 @@ import re
 from Symbol import *
 
 keywords = ['if', 'else', 'while', 'int', 'return', 'void']         # 关键字
-operator = ['+', '-', '*', '/', '<', '>', '<=', '>=', '!=', '=']    # 运算符
+operator = ['+', '-', '*', '/', '<', '>', '<=', '>=', '!=', '=', '==']    # 运算符
 delimiters = ['{', '}', '(', ')', ',', ';']                         # 界符
 
 class LexicalAnalyzer:
@@ -45,8 +45,17 @@ class LexicalAnalyzer:
         target = self.processed
         # 给界符和运算符前加个空格,确保能正确分割字符串
         results = re.findall(r'({|}|\(|\)|,|;|\+|-|\*|/|>=|<=|>|<|==|!=|=)', target)
-        for i in results:
-            target = target.replace(i, ' '+i+' ')
+        index = 0
+        for i in target:
+            if i in delimiters or operator and i == results[0]:
+                results.pop(0)
+                target = target[:index] + f' {i} ' + target[index+1:]
+                index += 2
+            elif i+target[index+1] == results[0]:
+                results.pop(0)
+                target = target[:index] + f' {i+target[index+1]} ' + target[index+2:]
+                index += 2
+            index += 1
         # 利用空格分组,但是最后总是有一个空格产生
         self.tokens = re.split(r'\s+', target)
         del self.tokens[len(self.tokens) - 1]
