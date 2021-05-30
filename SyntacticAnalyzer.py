@@ -96,29 +96,33 @@ class SyntacticAnalyzer:
                         if empty:      # check用于检查nonterm的first集是否变化
                             check=0
                         else: check=len(self.firstset[nonterm])
-                        #如果没超过产生式右部的长度且可以继续下去(遇到终结符或遇到的非终结符的first集含空)
-                        while i<length and findnext:
-                            #如果产生式右部第i个字符是非终结符且此非终结符first集不为空
+                        # 如果没超过产生式右部的长度且可以继续下去(遇到终结符或遇到的非终结符的first集含空)
+                        while i < length and findnext:
+                            # 如果产生式右部第i个字符是非终结符且此非终结符first集不为空
                             if tmp_right[i] in self.nonterminals.values() and tmp_right[i] in self.firstset:
-                                if empty:    #nonterm的first集为空
-                                    self.firstset[nonterm]=copy.deepcopy(self.firstset[tmp_right[i]])
-                                    empty=False
-                                else: self.firstset[nonterm]= self.firstset[nonterm] | self.firstset[tmp_right[i]]  #并集
-                                #如果tmp[i]的first集包含空,针对产生式produc继续搜索
-                                if self.nullsymbol in self.firstset[tmp_right[i]]:
-                                    findnext=True
-                                else:findnext=False
-                            #如果产生式右部的第i个字符是终结符
+                                if empty:    # nonterm 的 first 集为空
+                                    self.firstset[nonterm] = copy.deepcopy(self.firstset[tmp_right[i]])
+                                    empty = False
+                                else:
+                                    self.firstset[nonterm] = self.firstset[nonterm] | self.firstset[tmp_right[i]]  # 并集
+                                # 如果tmp[i]的first集包含空且temp[i]不是产生式右部的最后一个字符,针对产生式 produc 继续搜索，并将空字符从first集删除
+                                if self.nullsymbol in self.firstset[tmp_right[i]] and i != length-1:
+                                    findnext = True
+                                    self.firstset[nonterm].remove(self.nullsymbol)
+                                else:
+                                    findnext = False
+                            # 如果产生式右部的第i个字符是终结符
                             elif tmp_right[i] in self.terminals.values():
                                 self.firstset[nonterm].add(tmp_right[i])
                                 findnext=False
-                            #产生式右部的第i个非终结符first集为空
-                            else: findnext=False
-                            i+=1
-                        #判断nonterm的first集是否改变
+                            # 产生式右部的第i个非终结符first集为空
+                            else:
+                                findnext=False
+                            i += 1
+                        # 判断nonterm的first集是否改变
                         if not empty:
-                            if check!=len(self.firstset[nonterm]):
-                                change=True
+                            if check != len(self.firstset[nonterm]):
+                                change = True
 
     # 用于初始化部分first集：
     # 即仅针对产生式右部第一个字符是终结符的情况，将该终结符加入到产生式左部的非终结符的first集当中
@@ -142,36 +146,36 @@ class SyntacticAnalyzer:
     def create_closures(self):
         # 首先创建初始状态集
         self.get_firstclosure()
-        num=-1    #状态的序号
-        #对于闭包集中的每一个闭包，因为list是有序的，因此总是可以循环完
+        num = -1    # 状态的序号
+        # 对于闭包集中的每一个闭包，因为list是有序的，因此总是可以循环完
         for closure in self.closures:
             if self.error:
-                break;
-            num+=1
-            golist={}
+                break
+            num += 1
+            golist = {}
             # 每输入一个字符就有可能转移到别的状态，可以理解为循环一次就得到一个新的状态
             # 跳过全是规约项目和接收项目的闭包集
-            if closure.get_flag()=='r' or closure.get_flag()=='acc':
+            if closure.get_flag() == 'r' or closure.get_flag() == 'acc':
                 self.GO.append(golist)
                 continue
             # 每次输入一个符号，遍历该闭包集中的所有项目，查看是否能拓展出新的闭包集
             for symbol in self.allsymbols:
                 if self.error:
-                    break;
+                    break
                 if symbol == self.nullsymbol:
                     continue
-                new_closure=CLO.closure()
+                new_closure = CLO.closure()
                 for item in closure.items:
-                    temp_right=item.get_right()
-                    dot=item.get_dotposition()
-                    if temp_right[dot]==symbol:
+                    temp_right = item.get_right()
+                    dot = item.get_dotposition()
+                    if temp_right[dot] == symbol:
                         # 将该项目向后展望一个字符（dot+1）得到新项目，同时判断新项目的类型，赋予新闭包状态类型
-                        temp_item=copy.deepcopy(item)
+                        temp_item = copy.deepcopy(item)
                         temp_item.set_dot(dot+1)
                         new_closure.add_item(temp_item)
                         # 对于acc和r这两种类型我们可以直接填写action表了
-                        if temp_item.get_rightnum()==dot+1:
-                            if item.get_left()==self.startsymbol:
+                        if temp_item.get_rightnum() == dot+1:
+                            if item.get_left() == self.startsymbol:
                                 new_closure.set_flag('acc')
                             else: 
                                 new_closure.set_flag('r')
@@ -183,25 +187,26 @@ class SyntacticAnalyzer:
                             print('conflic occured, the closure:')
                             new_closure.show()
                             break
-                        #判断完毕，将必要信息加入到new_closure中
-                        if new_closure.get_flag()=='s':
+                        # 判断完毕，将必要信息加入到new_closure中
+                        if new_closure.get_flag() == 's':
                             if temp_right[dot+1] in self.nonterminals.values():
                                 if temp_right[dot+1] not in new_closure.waited:
                                     new_closure.waited.append(temp_right[dot+1])
                                 if temp_right[dot+1] in new_closure.waited_produc:
                                     new_closure.waited_produc[temp_right[dot+1]].append(temp_item)
-                                else: new_closure.waited_produc[temp_right[dot+1]]=[temp_item]
+                                else:
+                                    new_closure.waited_produc[temp_right[dot+1]]=[temp_item]
                 # 构造新的状态集，同时补充go函数
                 if len(new_closure.items):
-                    next_num=self.get_closure(new_closure)
-                    golist[symbol]=next_num
+                    next_num = self.get_closure(new_closure)
+                    golist[symbol] = next_num
                 else:
-                    golist[symbol]='none'
+                    golist[symbol] = 'none'
             # 当前状态的go函数
             self.GO.append(golist)
 
     # 用于构造一个完整项目集,与get_firstclosure()思路一致
-    def get_closure(self,closure):
+    def get_closure(self, closure):
         while len(closure.waited):
             target = closure.waited.pop()
             # if len(closure.waited_produc[target])==0:
@@ -231,7 +236,7 @@ class SyntacticAnalyzer:
                     temp.set_next(temp_next)
                     if temp not in closure.items:
                         closure.add_item(temp)
-                    #同时记录下一个target和waited_produc
+                    # 同时记录下一个target和waited_produc
                     if i.get_right()[0] in self.nonterminals.values():
                         next_target=i.get_right()[0]
                         if next_target not in closure.used and next_target!=target and next_target not in closure.waited:
@@ -255,50 +260,57 @@ class SyntacticAnalyzer:
             # 构造action表
             actionlist = {}
             for term in list(self.terminals.values()) + [self.endsymbol]:
+                # action 表中不包含空字符
                 if term == self.nullsymbol:
                     continue
+                # 遍历项目集规范簇中每一个项目
                 for item in closure.items:
-                    if closure.get_flag()=='s':
-                        dot = item.get_dotposition()
-                        if term == item.get_right()[dot]:
-                            actionlist[term]='s'+str(self.GO[num][term])
-                            break
-                        else:
-                            actionlist[term]='none'
-                    elif closure.get_flag()=='r' or closure.get_flag()=='acc':
+                    dot = item.get_dotposition()
+                    right_len = len(item.get_right())
+                    # 满足 A->S., term 或者 A->._, term
+                    if dot == right_len or (item.get_right()[dot] == self.nullsymbol and dot == 0):
                         if term in item.get_next():
                             tmp_produc = copy.deepcopy(item)
                             tmp_produc.item2produc()
-                            if closure.get_flag()=='r':
-                                actionlist[term] = 'r'+str(self.productions.index(tmp_produc))
-                                break
+                            if closure.get_flag() != 'acc':
+                                actionlist[term] = 'r' + str(self.productions.index(tmp_produc))
                             else:
                                 actionlist[term] = 'acc'
-                                break
+                            break
                         else:
-                            actionlist[term]='none'
+                            actionlist[term] = 'none'
+                    # 满足 A->B.term C, b 或者 A->B.term, b
+                    elif dot < right_len:
+                        if term == item.get_right()[dot]:
+                            actionlist[term] = 's' + str(self.GO[num][term])
+                            break
+                        else:
+                            actionlist[term] = 'none'
+
+                    else:
+                        actionlist[term] = 'none'
             self.ACTION.append(actionlist)
             # 构造goto表
             goto = {}
             for nonterm in self.nonterminals.values():
-                if nonterm==self.startsymbol:
+                if nonterm == self.startsymbol:
                     continue
-                if closure.get_flag()=='s' and self.GO[num][nonterm]!= 'none':
-                        goto[nonterm]=self.GO[num][nonterm]
+                if closure.get_flag() == 's' and self.GO[num][nonterm] != 'none':
+                    goto[nonterm] = self.GO[num][nonterm]
                 else:
-                    goto[nonterm]='none'
+                    goto[nonterm] = 'none'
             self.GOTO.append(goto)
             num += 1
 
     # 用于创造第一个项目集
     def get_firstclosure(self):
-        firstclosure=CLO.closure()
+        firstclosure = CLO.closure()
         for i in self.productions:
-            if i.get_left()==self.startsymbol:
-                temp=copy.deepcopy(i)
+            if i.get_left() == self.startsymbol:
+                temp = copy.deepcopy(i)
+                temp.set_dot(0)
+                temp.set_next(self.endsymbol)  # 构造第一个项目
                 break
-        temp.set_dot(0)
-        temp.set_next(self.endsymbol)       # 构造第一个项目
         firstclosure.add_item(temp)         # 将该项目加入到项目集中
         firstclosure.waited.append(temp.get_right()[0])         # 将未计算过的非终结符加入到waited中
         firstclosure.waited_produc[temp.get_right()[0]]=[temp]   # 将该项目记录下来，用于计算next
@@ -306,28 +318,28 @@ class SyntacticAnalyzer:
             target=firstclosure.waited.pop()
             # 求first(target之后的一个字符),若first集含空，则将first(next)也加入
             # 若target之后的一个字符不存在，则算first(next)
-            temp_item=firstclosure.waited_produc[target].pop()
-            dot=temp_item.get_dotposition()
+            temp_item = firstclosure.waited_produc[target].pop()
+            dot = temp_item.get_dotposition()
             # target之后的第一个字符不存在，即target是temp_item右部的最后一个字符
-            if temp_item.get_rightnum()==dot+1 or temp_item.get_rightnum()==dot:
-                temp_next=copy.deepcopy(temp_item.get_next())
+            if temp_item.get_rightnum() == dot+1 or temp_item.get_rightnum() == dot:
+                temp_next = copy.deepcopy(temp_item.get_next())
             # target之后还有字符，顺势求出next
             else: 
-                temp_right=temp_item.get_right()
-                temp_next=copy.deepcopy(self.firstset[temp_right[dot + 1]])
+                temp_right = temp_item.get_right()
+                temp_next = copy.deepcopy(self.firstset[temp_right[dot + 1]])
                 if self.nullsymbol in temp_next:
                     temp_next.remove(self.nullsymbol)
                     for next in temp_item.get_next():
-                        temp_next=temp_next | self.firstset[next]
+                        temp_next = temp_next | self.firstset[next]
             # 将所有以target为左部的产生式加上刚求出的next作为新的item加入到closure中
             for i in self.productions:
-                if i.get_left()==target:
-                    temp=copy.deepcopy(i)
+                if i.get_left() == target:
+                    temp = copy.deepcopy(i)
                     temp.set_dot(0)
                     temp.set_next(temp_next)
                     if temp not in firstclosure.items:
                         firstclosure.add_item(temp)
-                    #同时记录下一个target和waited_produc
+                    # 同时记录下一个target和waited_produc
                     if i.get_right()[0] in self.nonterminals.values():
                         next_target=i.get_right()[0]
                         if next_target not in firstclosure.used and next_target!=target and next_target not in firstclosure.waited:
@@ -338,14 +350,14 @@ class SyntacticAnalyzer:
                             # else: firstclosure.waited_produc[next_target]=[temp]
             firstclosure.used.append(target)
             # del firstclosure.waited_produc[target]
-        #第一个状态里的项目全都是移进项目，因为是拓广文法
+        # 第一个状态里的项目全都是移进项目，因为是拓广文法
         firstclosure.set_flag('s')
         self.closures.append(firstclosure)
 
     # 用于检查closure是否已经存在于闭包集closures中,若存在则返回序号，不存在则返回-1
-    def check_closure(self,closure):
+    def check_closure(self, closure):
         for closure_a in self.closures:
-            if closure_a==closure:
+            if closure_a == closure:
                 return self.closures.index(closure_a)
         return -1
 
@@ -358,32 +370,29 @@ class SyntacticAnalyzer:
         for i in self.productions:
             i.show()
 
-    def display_items(self):
-        print('these are items:')
-        for i in self.__items:
-            i.show()
-
     def display_first(self):
-        print('these are firstset:')
+        print('these are first_set:')
         for i in self.firstset:
-            print('%s:%s' % (i,self.firstset[i]))
+            print('%s:%s' % (i, self.firstset[i]))
 
     def display_closures(self):
         print('closure num = %d' % len(self.closures))
-        fd = open("../result/closure.txt",'w')
+        fd = open("result/closure.txt", 'w')
         for i in self.closures:
             fd.write('closure %d:\n' % self.closures.index(i))
             i.show(fd)
         fd.close()
 
     def display_go(self):
+        num = 0
         for i in self.GO:
-            print('\n状态编号:%d ' % (self.GO.index(i)), end='')
+            print('\n状态编号:%d ' % num, end='')
             for j in i:
-                print('%s:%s ' % (j,i[j]),end='')
+                print('%s:%s ' % (j, i[j]), end='')
+            num += 1
 
     def display_action(self):
-        fd = open("../result/action表.txt",'w')
+        fd = open("result/action表.txt", 'w')
         count = 0
         for i in self.ACTION:
             fd.write('status%d: %s\n' % (count, i))
@@ -391,26 +400,26 @@ class SyntacticAnalyzer:
         fd.close()
 
     def display_goto(self):
-        fd = open('../result/goto表.txt', 'w')
+        fd = open('result/goto表.txt', 'w')
         count = 0
         for i in self.GOTO:
             fd.write('status%d: %s\n' % (count, i))
             count += 1
         fd.close()
 
-    def analyze(self,filepath):
+    def analyze(self, filepath):
         # 读入语法规则
         self.readfile(filepath)
         # 构造项目集规范族
         self.create_closures()
-        if self.error == False:
+        if not self.error:
             # 构造action表和goto表
             self.get_action_goto()
 
 
-if __name__=='__main__':
-    toy=SyntacticAnalyzer()
-    toy.analyze('../测试文件/easytest.txt')
+if __name__ == '__main__':
+    toy = SyntacticAnalyzer()
+    toy.analyze('测试文件/easyrule.txt')
     toy.display_closures()
     toy.display_action()
     toy.display_goto()
