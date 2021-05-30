@@ -24,13 +24,16 @@ def scan(input_chars, analyzer):
             production = productions[pro_index]
             # 将分析栈中长度为 right_len 的内容弹出，压入产生式左部的字符
             # 将状态栈中 right_len 个状态弹出
-            right_len = production.get_rightnum()
-            del stack[-right_len:]
-            del status[-right_len:]
+            # 注意空字符长度为0，此时我们不应该 pop stack 和 status 中的内容
+            if production.get_right()[0] != analyzer.nullsymbol:
+                right_len = production.get_rightnum()
+                del stack[-right_len:]
+                del status[-right_len:]
             stack.append(production.get_left())
             # 从goto表中找下一个状态
             next_status = goto[status[-1]][stack[-1]]
             status.append(next_status)
+            print('使用产生式%d:%s规约 stack=%s   status=%s' % (pro_index, production.get_production_str(), stack, status))
         # 将新的状态和即将输入的字符分别压进状态栈和分析栈
         elif re.match(r's\d+', action[status[-1]][next_char]):
             next_status = int(action[status[-1]][next_char][1:])
@@ -38,6 +41,7 @@ def scan(input_chars, analyzer):
             stack.append(next_char)
             del input_chars[0]
             next_char = input_chars[0]
+            print('移进  stack=%s  status=%s next_char=%s' % (stack, status, next_char))
         else:
             print('在action表中找不到相应的动作,分析退出！')
             print('status=%d,next_char=%s' % (status[-1], next_char))
@@ -45,19 +49,22 @@ def scan(input_chars, analyzer):
 
 
 if __name__ == '__main__':
-    code_path = '../测试文件/code.txt'
-    grammar_path = '../测试文件/rule.txt'
+    code_path = '测试文件/code.txt'
+    grammar_path = '测试文件/rule.txt'
     # 初始化词法分析器
     analyzerL = LexicalAnalyzer(code_path)
     analyzerL.processing()
     token = analyzerL.tokens
     print(token)
+    # 读入简单的测试程序
+    # token = ['a', 'b', 'b', 'b']
     # 初始化语法分析器
     analyzerS = SyntacticAnalyzer()
-    analyzerS.readfile(grammar_path)
     analyzerS.analyze(grammar_path)
     # 扫描器开始分析程序
     analyzerS.display_closures()
     analyzerS.display_goto()
     analyzerS.display_action()
+    # analyzerS.display_go()
+    # analyzerS.display_first()
     scan(token, analyzerS)
