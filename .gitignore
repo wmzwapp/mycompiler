@@ -25,3 +25,6 @@ gen
 /compiler
 /result
 /测试文件
+
+#
+/__pycache__
