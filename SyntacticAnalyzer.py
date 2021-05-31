@@ -28,24 +28,24 @@ class SyntacticAnalyzer:
     # 输出：无
     def readfile(self, filepath):
         with open(filepath, 'r') as f:
-            allin=f.read()               #一次性全部读取
-        allin=re.split('\nseparator\n?',allin)
-        tmp_nonterminals=allin[0]
-        tmp_terminals=allin[1]
-        tmp_productions=allin[2]
-        tmp_symbols=allin[3]
-        tmp_nonterminals=re.split('\n',tmp_nonterminals)   # 得到了非终结符的集合
-        tmp_terminals=re.split('\n',tmp_terminals)         # 得到了终结符的集合
-        tmp_productions=re.split('\n',tmp_productions)     # 得到了产生式字符串的集合
-        tmp_symbols=re.split('\n',tmp_symbols)
+            allin = f.read()               # 一次性全部读取
+        allin = re.split('\nseparator\n?', allin)
+        tmp_nonterminals = allin[0]
+        tmp_terminals = allin[1]
+        tmp_productions = allin[2]
+        tmp_symbols = allin[3]
+        tmp_nonterminals = re.split('\n', tmp_nonterminals)   # 得到了非终结符的集合
+        tmp_terminals = re.split('\n', tmp_terminals)         # 得到了终结符的集合
+        tmp_productions = re.split('\n', tmp_productions)     # 得到了产生式字符串的集合
+        tmp_symbols = re.split('\n', tmp_symbols)
         # 获得源程序开始符号、结束符号和空字符
-        self.startsymbol=tmp_symbols[0]
-        self.endsymbol=tmp_symbols[1]
-        self.nullsymbol=tmp_symbols[2]
+        self.startsymbol = tmp_symbols[0]
+        self.endsymbol = tmp_symbols[1]
+        self.nullsymbol = tmp_symbols[2]
         # 获得非终结符集、终结符集、产生式集和所有符号的first集
         self.get_terminals(*tmp_terminals)
         self.get_nonterminals(*tmp_nonterminals)
-        self.allsymbols= list(self.nonterminals.values()) + list(self.terminals.values())
+        self.allsymbols = list(self.nonterminals.values()) + list(self.terminals.values())
         self.get_productions(*tmp_productions)
         self.create_first()
 
@@ -62,18 +62,18 @@ class SyntacticAnalyzer:
             self.nonterminals[int(temp[1])]=temp[0]    #同上
 
     # 产生式有一个特点，右部的每个符号之间都有一个空格隔开，因此我们可以利用这个来得到右部的每一个符号
-    def get_productions(self,*tmp_productions):
-        length=len(tmp_productions)
-        i=0
-        while i<length:
-            tmp_produc=PRO.production()
-            temp=tmp_productions[i]
-            temp=re.split('->',temp)
-            tmp_right=re.split(r'\s',temp[1])
+    def get_productions(self, *tmp_productions):
+        length = len(tmp_productions)
+        i = 0
+        while i < length:
+            tmp_produc = PRO.production()
+            temp = tmp_productions[i]
+            temp = re.split('::=', temp)
+            tmp_right = re.split(r'\s', temp[1])
             tmp_produc.set_left(temp[0])
             tmp_produc.set_right(tmp_right)
             self.productions.append(tmp_produc)
-            i+=1
+            i += 1
 
     # 用于构造全体符号的first集，并保存在类成员firstset当中，每个非终结符(key)对应一组set(values)
     # 非递归方法，因此比较长
