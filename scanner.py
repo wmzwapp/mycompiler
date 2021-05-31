@@ -12,11 +12,12 @@ def scan(input_chars, analyzer):
     goto = analyzer.GOTO                        # goto表
     productions = analyzer.productions          # 文法产生式
     next_char = input_chars[0]                 # 即将输入的字符
+    fd = open('result/parser_processing.txt', 'w')
     while len(input_chars):
         # 先查看action表
         # 如果分析成功
         if action[status[-1]][next_char] == 'acc':
-            print('分析成功！')
+            fd.write('分析成功！\n')
             break
         # 如果需要进行规约
         elif re.match(r'r\d+', action[status[-1]][next_char]):
@@ -33,7 +34,7 @@ def scan(input_chars, analyzer):
             # 从goto表中找下一个状态
             next_status = goto[status[-1]][stack[-1]]
             status.append(next_status)
-            print('使用产生式%d:%s规约 stack=%s   status=%s' % (pro_index, production.get_production_str(), stack, status))
+            fd.write('使用产生式%d:%s规约 stack=%s   status=%s\n' % (pro_index, production.get_production_str(), stack, status))
         # 将新的状态和即将输入的字符分别压进状态栈和分析栈
         elif re.match(r's\d+', action[status[-1]][next_char]):
             next_status = int(action[status[-1]][next_char][1:])
@@ -41,10 +42,10 @@ def scan(input_chars, analyzer):
             stack.append(next_char)
             del input_chars[0]
             next_char = input_chars[0]
-            print('移进  stack=%s  status=%s next_char=%s' % (stack, status, next_char))
+            fd.write('移进  stack=%s  status=%s next_char=%s\n' % (stack, status, next_char))
         else:
-            print('在action表中找不到相应的动作,分析退出！')
-            print('status=%d,next_char=%s' % (status[-1], next_char))
+            fd.write('在action表中找不到相应的动作,分析退出！\n')
+            fd.write('status=%d,next_char=%s\n' % (status[-1], next_char))
             break
 
 
