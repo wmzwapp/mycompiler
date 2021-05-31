@@ -1,0 +1,40 @@
+S' 0
+S 1
+A 2
+B 3
+C 4
+D 5
+E 6
+F 7
+G 8
+separator
+_ 0
+int 1
+void 2
+; 3
+( 4
+) 5
+ID 6
+m 7
+n 8
+{ 9
+} 10
+separator
+S'->S
+S->A S
+S->_
+A->int ID B
+A->void ID C
+B->;
+B->C
+C->( D ) E
+D->void
+E->{ F G }
+F->_
+F->ID
+G->int
+separator
+S'
+#
+_
+separator
