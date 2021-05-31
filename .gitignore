@@ -23,8 +23,6 @@ gen
 
 # my test folder
 /compiler
-/result
-/测试文件
 
 #
 /__pycache__
