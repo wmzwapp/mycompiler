@@ -3,7 +3,6 @@
 # 产生式类：语法规则中
 #
 class production:
-
     def __init__(self):
         self.__isitem = False     # 默认为产生式
         self.__left = ''

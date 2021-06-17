@@ -376,7 +376,7 @@ class SyntacticAnalyzer:
             print('%s:%s' % (i, self.firstset[i]))
 
     def display_closures(self):
-        print('closure num = %d' % len(self.closures))
+        # print('closure num = %d' % len(self.closures))
         fd = open("result/closure.txt", 'w')
         for i in self.closures:
             fd.write('closure %d:\n' % self.closures.index(i))

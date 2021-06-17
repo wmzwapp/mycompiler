@@ -3,9 +3,9 @@
 import re
 from Symbol import *
 
-keywords = ['if', 'else', 'while', 'int', 'return', 'void']         # 关键字
-operator = ['+', '-', '*', '/', '<', '>', '<=', '>=', '!=', '=', '==']    # 运算符
-delimiters = ['{', '}', '(', ')', ',', ';']                         # 界符
+keywords = ['if', 'else', 'while', 'int', 'return', 'void']                 # 关键字
+operator = ['+', '-', '*', '/', '<', '>', '<=', '>=', '!=', '=', '==']      # 运算符
+delimiters = ['{', '}', '(', ')', ',', ';']                                 # 界符
 
 class LexicalAnalyzer:
 
@@ -36,11 +36,13 @@ class LexicalAnalyzer:
     # 打印出预处理过后的文件
     def display(self):
         print('预处理后的源文件:\n%s' % self.processed)
-        print('词法分析器的结果:%s\n' % self.tokens)
+        print('词法分析器的结果:')
+        for i in self.tokens:
+            print(i.no, end=' ')
+        print('')
 
     # 词法分析器处理的主体的函数
     def processing(self):
-        flag = True
         self.preprocessing()                # 预处理
         target = self.processed
         # 给界符和运算符前加个空格,确保能正确分割字符串
@@ -59,46 +61,30 @@ class LexicalAnalyzer:
         # 利用空格分组,但是最后总是有一个空格产生
         self.tokens = re.split(r'\s+', target)
         del self.tokens[len(self.tokens) - 1]
-        # 分好组后将标识符和数字替换成ID和NUM，并将其余信息录入到符号表中
+        # 分好组后将标识符和数字替换成ID和NUM，并录入到符号表中
+        # 这里需要注意：词法分析器处理后以及语法分析器中识别到的都是ID NUM 这是不足以识别出变量和常量的
+        # 在 SymbolTable 中存储的是以 IDn 或 NUMn 为key的 Symbol 对象，其中ID/NUM的下标n是其出现的顺序
+        # 在生成中间代码的时候，因为是顺序读入词法分析器处理后的tokens，所以当读到第m个ID时就在符号表中找以
+        # IDm 为key在SymbolTable寻找Symbol对象
         ptr = 0
-        checklist = []                  # 存有符号表中已经录入的符号
         for j in self.tokens:
             # 替换标识符并录入到符号表中
             if re.match(r'([a-zA-Z][a-zA-Z0-9_]*)', j) and j not in keywords:
-                if j not in checklist:
-                    SymbolTable.append(Symbol(j, 'ID'))
-                    checklist.append(j)
-                self.tokens[ptr] = 'ID'
+                symbol = Symbol('ID', j, len(SymbolTable))
             # 替换数字并录入到符号表中
             elif re.match(r'(\d+)', j):
-                if j not in checklist:
-                    SymbolTable.append(Symbol(j, 'NUM'))
-                    checklist.append(j)
-                self.tokens[ptr] = 'NUM'
-            # 将关键字录入到符号表中
-            elif j in keywords:
-                if j not in checklist:
-                    SymbolTable.append(Symbol(j, 'KEYWORD'))
-                    checklist.append(j)
-            # 将界符录入到符号表中
-            elif j in delimiters:
-                if j not in checklist:
-                    SymbolTable.append(Symbol(j, 'DELIMITER'))
-                    checklist.append(j)
-            # 将运算符录入到符号表中
-            elif j in operator:
-                if j not in checklist:
-                    SymbolTable.append(Symbol(j, 'OPERATOR'))
-                    checklist.append(j)
+                symbol = Symbol('NUM', j, len(SymbolTable))
+                symbol.value = int(j)
             else:
-                print('存在非法字符:%s' % j)
-                flag = False
-                break
+                symbol = Symbol(j, j, len(SymbolTable))
+            SymbolTable.append(symbol)
+            self.tokens[ptr] = symbol
             ptr += 1
-        return flag
 
 
 if __name__ == '__main__':
-    test = LexicalAnalyzer("../测试文件/code.txt")
-    if test.processing():
-        test.display()
+    test = LexicalAnalyzer("测试文件/code.txt")
+    test.processing()
+    test.display()
+    for i in test.tokens:
+        print(i.no, i.index, i.lexeme, i.value)

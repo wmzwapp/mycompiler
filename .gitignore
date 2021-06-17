@@ -24,5 +24,9 @@ gen
 # my test folder
 /compiler
 
+# my test file
+tool.py
+
 #
 /__pycache__
+
