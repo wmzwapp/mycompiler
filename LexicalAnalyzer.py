@@ -67,17 +67,27 @@ class LexicalAnalyzer:
         # 在生成中间代码的时候，因为是顺序读入词法分析器处理后的tokens，所以当读到第m个ID时就在符号表中找以
         # IDm 为key在SymbolTable寻找Symbol对象
         ptr = 0
+        checklist = []
         for j in self.tokens:
             # 替换标识符并录入到符号表中
             if re.match(r'([a-zA-Z][a-zA-Z0-9_]*)', j) and j not in keywords:
                 symbol = Symbol('ID', j, len(SymbolTable))
+                if j not in checklist:
+                    SymbolTable.append(symbol)
+                    checklist.append(j)
+                else:
+                    for check in SymbolTable:
+                        if check.lexeme == j:
+                            symbol.index = check.index
+                            break
             # 替换数字并录入到符号表中
             elif re.match(r'(\d+)', j):
                 symbol = Symbol('NUM', j, len(SymbolTable))
                 symbol.value = int(j)
+                SymbolTable.append(symbol)
             else:
                 symbol = Symbol(j, j, len(SymbolTable))
-            SymbolTable.append(symbol)
+                SymbolTable.append(symbol)
             self.tokens[ptr] = symbol
             ptr += 1
 
@@ -87,4 +97,7 @@ if __name__ == '__main__':
     test.processing()
     test.display()
     for i in test.tokens:
-        print(i.no, i.index, i.lexeme, i.value)
+        print(i)
+    print('SymbolTable:')
+    for i in SymbolTable:
+        print(i)

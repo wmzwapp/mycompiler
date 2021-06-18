@@ -1,6 +1,8 @@
 int program(void){
     int i;
     int j;
-    i=0;
-    j = i + 100;
+    int p;
+    i = 10;
+    p = 100 / i;
+    j = ( i * 100 ) / 110 + 100;
 }
